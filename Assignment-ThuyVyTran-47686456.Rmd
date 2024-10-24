@@ -1,0 +1,261 @@
+---
+title: "Assignment-ThuyVyTran-47686456"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+goods <- read.csv("goods.csv")
+realestate2024 <- read.csv("realestate2024.csv")
+```
+
+# **Question 1 [45 marks]**
+
+A real estate company wants to be able to estimate the value of real estate properties in an area where prices have remained stable in the last few years. 197 property sales were collected and their price recorded along with the details of each of the properties. The data is available in the file realestate2024.csv on iLearn.
+
+## a. [7 marks] Produce a plot and a correlation matrix of the data. Comment on possible relationships between the response and predictors and relationships between the predictors themselves.
+
+
+```{r}
+realestate <- read.csv("realestate2024.csv")
+pairs(realestate, panel = panel.smooth)
+```
+
+```{r}
+# Correlation matrix
+cor(realestate)
+```
+
+**Comments:** 
+
+* The response variable **price** exhibits a strong positive linear relationship with the predictor **size**, and a weak negative linear relationship with **age**. Additionally, the relationship between **price** and the number of **bedrooms** is not obvious.
+* There is no significant correlation exists among the predictors themselves.
+
+## b. [6 marks] 
+* Fit a model using all the predictors to explain the price response.
+* Using the full model, estimate the impact each square meter of area has on the price. Do this by producing a 95% confidence interval that quantifies the change in price for each extra square meter of the property size and comment.
+
+```{r}
+M1 <- lm(price ~ ., data = realestate)
+summary(M1)
+```
+```{r}
+df <- 193
+alpha <- 0.975
+
+# Calculate the t value
+t <- qt(alpha, df)
+t
+```
+
+* The required confidence interval (CI) is:
+
+  $\hat{\beta}_{\text{size}} \pm t_{n-p,1-\alpha/2} s.e.(\hat{\beta}_{\text{size}})$
+
+  $= \hat{\beta}_{\text{size}} \pm t_{193,0.975} s.e.(\hat{\beta}_{\text{size}})$
+
+  $= 4.937 \pm 1.972332 \times 0.2818869$
+
+  $= (4.3808594,5.4931406).$
+
+The 95% confidence interval for this coefficient is approximately (4.381, 5.493), indicating we can be 95% confident that each additional square meter increases the price by between 4.381 (thousands of dollars) and 5.493 (thousands of dollars).
+
+## c. [14 marks]
+## Write down the mathematical multiple regression model for this situation, defining all appropriate parameters.
+ * The theoretical model is given by:
+
+$Y_i = \beta_0 + \beta_1 X_{i1} + \beta_2 X_{i2} + \beta_3 X_{i3} + \epsilon_i, \quad i = 1, 2, \ldots, n$
+
+- **Y** is the response variable **price**;
+- **$X_{ij}$** are the predictor variables for the $i$-th observation:
+  * $X_{i1} = \text{size of the property (m²)}$
+  * $X_{i2} = \text{number of bedrooms}$
+  * $X_{i3} = \text{age of the property (years)}$
+- $\epsilon \sim N(0, \sigma^2)$ denotes the random variation with constant variance;
+
+## Write down the Hypotheses for the Overall ANOVA test of multiple regression.
+- Hypotheses: $H_0: \beta_1 = \beta_2 = \beta_3 = 0$ vs $H_1: \text{not all } \beta_i = 0; \; i = 1, 2, 3.$
+
+```{r}
+anova(M1)
+```
+## Produce an ANOVA table for the overall multiple regression model (One combined regression SS source is sufficient).
+* ANOVA table for the overall multiple regression model:
+
+\[
+\begin{array}{c | c | c | c | c | c}
+\hline
+\text{ } & \text{Df} & \text{Sum Sq} & \text{Mean Sq} & \text{F value} & \text{Pr(>F)} \\
+\hline
+\text{Regression} & 3 & 50287541 & 16762513.67 & 105.433 & 0\\
+\text{Residuals} & 193 & 30684511 & 398.7 & \\
+\hline
+\end{array}
+\]
+
+- Regression SS = 49256631 + 1028915 + 1995 = 50287541.
+- Mean Square Regression = $\text{Reg SS} / \text{Reg df} = 50287541 / 3 = 16762513.6667$.
+
+## Compute the F statistic for this test.
+- Test statistic: $F_{\text{obs}} = \frac{MS_{\text{Reg}}}{MS_{\text{Res}}} = \frac{16762513.6667}{158987} = 105.433234583$.
+
+## State the Null distribution for the test statistic.
+- The null distribution for the test statistic is $F_{3,193}$.
+
+## Compute the P-Value
+- P-value: $P(F_{3,193} \geq 105.433234583) = 0 (because < 2 \times 10^{-16}) => P(F_{3,193} \geq 105.433234583) < 0.05$
+
+## State your conclusion (both statistical conclusion and contextual conclusion).
+As the P-value is small,
+
+- (Statistical) The F-statistic calculated is approximately 105.45, and the associated p-value is less than 2e-16. Since this p-value is far smaller than any conventional significance level (e.g., 0.05), we reject the null hypothesis that there is no relationship between the predictors (size, bedrooms, and age) and the response variable (price).
+
+- (Contextual) That is, there is a significant linear relationship between price and at least one of the predictor variables.
+
+## d. [10 marks] Validate the full model and comment on whether the full regression model is appropriate to explain the property price. Please note: in the other parts of this question we assume that the model is validated, regardless of the results of part d.
+
+For the diagnostics:
+```{r}
+par(mfrow = c(2,3))
+plot(M1, which = 1:2)
+
+plot(resid(M1) ~ size, data = realestate, xlab = "Size", ylab = "Residuals")
+abline(h = 0, lty = 2)
+
+plot(resid(M1) ~ bedrooms, data = realestate, xlab = "Bedrooms", ylab = "Residuals")
+abline(h = 0, lty = 2)
+
+plot(resid(M1) ~ age, data = realestate, xlab = "Age", ylab = "Residuals")
+abline(h = 0, lty = 2)
+```
+
+* The residuals vs. fitted values plot does not show a clear pattern, which suggests that the assumption of homoscedasticity (constant variance of residuals) is reasonably met. 
+
+* The Q-Q plot demonstrates that the residuals are approximately normally distributed, supporting the validity of the model despite potential deviations.
+
+## e. [2 marks] Find the \(R^{2}\) and comment on what it means in the context of this dataset.
+The \(R^{2} = 0.621 = 61.2\%\), meaning that approximately 62.1% of the variability in property prices is explained by the size, number of bedrooms, and age of the property. This indicates a moderate fit to the data, suggesting that the model explains a significant portion of the variation in prices but leaves room for unexplained variability.
+
+## f. [3 marks] Using model selection procedures discussed in the course, find the best multiple regression model that explains the data. State the final fitted regression model.
+```{r}
+summary(M1)
+```
+Remove **Age** because it has the highest P-value.
+```{r}
+M2 <- update(M1, . ~ . - age)
+summary(M2)
+```
+At this point, all remaining predictors are significant and should be kept in the model. The final fitted regression model:
+$\hat{Y} = 459.872 + 4.932X_1 + 53.727X_2$
+
+or equivalently,
+
+$\hat{price} = 459.872 + 4.932\cdot \text{size} + 53.727\cdot \text{bedrooms}.$
+
+## g. [3 marks] Comment on the $R2^{2}$ and adjusted $R2^{2}$ in the full and final model you chose in part f. In particular explain why those goodness of fitness measures change but not in the same way.
+
+The $R2^{2}$ remains the same in both models, indicating that the explained variance has not changed, even though a predictor was removed. The adjusted $R2^{2}$ has slightly increased in the final model (from 0.615 to 0.617), reflecting a better model fit after removing the non-significant predictor (age), which does not contribute meaningfully to the model. This improvement is due to eliminating unnecessary complexity.
+
+# **Question 2 [29 marks]**
+A consumer goods company wants to analyse the effect of packaging type and storage condition on product freshness. The following variables are collected.
+
+## a. [2 marks] For this study, is the design balanced or unbalanced? Explain why
+
+A consumer goods company wants to analyse the effect of packaging type and storage condition on product freshness.
+```{r}
+goods <- read.csv("goods.csv", header = TRUE, stringsAsFactors = TRUE)
+# Check the number of replicates for Packaging and Storage
+table(goods[, c("Packaging", "Storage")])
+```
+From the table, we can see that the number of replicates for each combination of levels of the two factors (the number of replicates varies across the combinations of Packaging and Storage conditions) is **unequal** with **unbalanced** design.
+
+## b. [8 marks] Construct a boxplot and two interaction plots to investigate different features of the data and comment.
+```{r, fig.width=12, fig.height=7}
+boxplot(Freshness ~ Packaging + Storage, data = goods)
+```
+
+```{r, fig.width=14, fig.height=5}
+par(mfrow = c(1,2))
+with(goods, interaction.plot(Packaging, Storage, Freshness, lwd = 2))
+with(goods, interaction.plot(Storage, Packaging, Freshness, lwd = 2))
+```
+
+* From both interaction plots, we can see parallel lines for the means of each group at different levels of the independent variables. This indicates that there is no significant interaction effect between packaging type and storage condition on the freshness scores. Each factor seems to influence the freshness scores independently, suggesting that we can analyze the main effects of packaging and storage without considering their interaction.
+
+* From the boxplot, we can see that the assumption of equal variance among levels seems reasonably valid due to the similar box sizes across the different combinations of packaging type and storage condition. The interquartile ranges (IQRs) appear consistent, and the spread of the whiskers is relatively uniform, suggesting that the variability in freshness scores is comparable across groups.
+
+## c. [4 marks] Write down the full mathematical interaction model, defining all appropriate parameters.
+The full mathematical interaction model for analyzing the effect of Packaging and Storage on the Freshness Score can be expressed as follows:
+
+$Y_{ijk} = \mu + \alpha_i + \beta_j + \gamma_{ij} + \epsilon_{ijk}$
+
+Where:
+
+- $Y_{ijk}$ = Freshness score for the $k^{th}$ observation in the $i^{th}$ packaging type and $j^{th}$ storage condition.
+- $\mu$ = Overall mean freshness score across all packaging types and storage conditions.
+- $\alpha_i$ = Effect of the $i^{th}$ packaging type (where $i$ can be Paper or Plastic).
+- $\beta_j$ = Effect of the $j^{th}$ storage condition (where $j$ can be Room Temperature or Refrigerated).
+- $\gamma_{ij}$ = Interaction effect between the $i^{th}$ packaging type and $j^{th}$ storage condition
+- $\epsilon_{ijk}$ = Random error term associated with the $k^{th}$ observation, assumed to be normally distributed with a mean of 0 and constant variance $\sigma^2$.
+
+## d. [15 marks] Analyse the data to study the effect of Packaging and Storage on the Freshness Score. To complete this part successfully, you will need to run a few regressions and ANOVA analyses to identify the best model, checking the significance of the interaction and main effect terms. 
+
+### Hypotheses for Full Model (Interaction Included)
+- Main Effect of Packaging:  
+$H_0: \alpha_i = 0 \quad \text{vs} \quad H_1: \alpha_i \neq 0$
+  
+- Main Effect of Storage:  
+$H_0: \beta_j = 0 \quad \text{vs} \quad H_1: \beta_j \neq 0$
+  
+- Interaction (Packaging:Storage):  
+$H_0: \gamma_{ij} = 0 \text{ for all } i, j \quad \text{vs} \quad H_1: \gamma_{ij} \neq 0$
+
+```{r}
+# 1. Full model including the interaction term
+goodslm <- lm(Freshness ~ Packaging * Storage, data = goods)
+anova(goodslm)
+summary(goodslm)
+```
+### Hypotheses for Main Effects Model
+- Main Effect of Packaging:  
+$H_0: \alpha_i = 0 \quad \text{vs} \quad H_1: \alpha_i \neq 0$
+  
+- Main Effect of Storage:  
+$H_0: \beta_j = 0 \quad \text{vs} \quad H_1: \beta_j \neq 0$
+
+```{r}
+# 2. Main effects only model (without interaction)
+goodslm_me <- lm(Freshness ~ Packaging + Storage, data = goods)
+anova(goodslm_me)
+summary(goodslm_me)
+```
+### Hypotheses for Reduced Model
+- Main Effect of Packaging:  
+$H_0: \alpha_i = 0 \quad \text{vs} \quad H_1: \alpha_i \neq 0$
+
+```{r}
+# 3. Reduced model (if necessary, only include significant factors)
+goodslm_reduced <- lm(Freshness ~ Packaging, data = goods)  # If Storage is not significant
+anova(goodslm_reduced)
+summary(goodslm_reduced)
+```
+### Hypotheses for Null Model (Intercept Only)
+- Null Model:  
+$H_0 : \gamma_{ij} = 0 \text{ for all } i, j \quad \text{vs} \quad H_1 : \text{at least one } \gamma_{ij} \neq 0$
+
+```{r}
+# 4. Null model (intercept only)
+goodslm_null <- lm(Freshness ~ 1, data = goods)
+anova(goodslm_null)
+summary(goodslm_null)
+```
+```{r}
+par(mfrow = c(1, 2))
+plot(goodslm, which = 1:2)
+```
+
+* Residuals vs Fitted Plot: The residuals are randomly distributed around zero, suggesting that the model meets the assumption of constant variance (homoscedasticity).
+
+* Q-Q Plot: The residuals generally align with the reference line, indicating they are approximately normally distributed.
+
+**Both assumptions are reasonably met for the model.**
